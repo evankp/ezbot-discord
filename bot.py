@@ -1,7 +1,10 @@
 import discord
+from helpers.yaml_helper import read_yaml
 from discord.ext import commands
 
-TOKEN = "NTIzNzQ4NzY4NDYyNjY3Nzg2.DxQ-Nw.zMBEhIpv7kMCrVEB1zfQ7M_T0Gw"
+import os
+
+TOKEN = read_yaml('tokens')['discord_token']
 OWNER = 257106225777475585
 client = commands.Bot(command_prefix="!", pm_help=True)
 
