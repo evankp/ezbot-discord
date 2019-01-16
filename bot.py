@@ -5,7 +5,7 @@ from discord.ext import commands
 import os
 
 TOKEN = read_yaml('tokens')['discord_token']
-OWNER = 257106225777475585
+OWNER = read_yaml('tokens')['bot_owner']
 client = commands.Bot(command_prefix="!", pm_help=True)
 
 
@@ -35,5 +35,15 @@ async def message(ctx, *args):
 
     await dm_user.send(f"{ctx.author.mention} wants to let you know '{args[1]}'")
     await ctx.send('Message sent!')
+
+
+@client.command(pass_context=True, brief='Deletes messages')
+@commands.has_any_role('Owner', 'Admin')
+async def clear(ctx, num=10):
+    number = int(num)
+    async for message in ctx.channel.history(limit=number):
+        await message.delete()
+
+    print('Done!')
 
 client.run(TOKEN)
