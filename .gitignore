@@ -1,3 +1,4 @@
 .idea/*
 tokens.yaml
-venv/
+venv/*
+venv2/*
