@@ -1,12 +1,28 @@
 import discord
+import datetime
+import pytz
 from helpers.yaml_helper import read_yaml
 from discord.ext import commands
 
-import os
-
-TOKEN = read_yaml('tokens')['discord_token']
-OWNER = read_yaml('tokens')['bot_owner']
+TOKEN = read_yaml('tokens')['bot_token']
 client = commands.Bot(command_prefix="!", pm_help=True)
+
+available_timezones = {
+    'PST': 'America/Los_Angeles',
+    'PDT': 'America/Los_Angeles',
+    'CST': 'America/Chicago',
+    'EST': 'America/New_York',
+    'JST': 'Asia/Tokyo'
+}
+
+
+def to_24_time(date):
+    twelve_hour_time = datetime.datetime.strptime(date, '%m/%d/%Y %I:%M %p').strftime('%m/%d/%Y %H:%M')
+    return datetime.datetime.strptime(twelve_hour_time, '%m/%d/%Y %H:%M')
+
+
+def to_utc(timezone, date):
+    return timezone.normalize(timezone.localize(date)).astimezone(pytz.utc)
 
 
 @client.event
@@ -21,20 +37,24 @@ async def on_message(message):
     await client.process_commands(message)
 
 
-@client.command(pass_context=True, brief='DMs the owner of this bot.')
-async def tell_owner(ctx, *args):
-    owner_user = await client.get_user_info(OWNER)
+@client.command(pass_context=True, brief='Set an event')
+async def set_event(ctx, *args):
+    timezone = pytz.timezone(available_timezones[args[3]])
+    requested_date = ' '.join(args[0:3])
 
-    await owner_user.send(f'{ctx.author.mention} says "{args[0]}"')
+    if args[3] not in available_timezones:
+        await ctx.channel.send(f'Timezones supported: '
+                               f'{[key for key, value in available_timezones.items()]}.'
+                               f' Please contact @Ezoss with the name of the timezone from '
+                               f'https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List'
+                               f' for timezone to be added')
+        return
 
-
-@client.command(pass_context=True, brief='DMs a user -- message goes in quotes')
-async def message(ctx, *args):
-    user_to_message = int(args[0].replace('<@', '').replace('>', ''))
-    dm_user = await client.get_user_info(user_to_message)
-
-    await dm_user.send(f"{ctx.author.mention} wants to let you know '{args[1]}'")
-    await ctx.send('Message sent!')
+    try:
+        date = to_utc(timezone, to_24_time(requested_date))
+        cron_statement = f'cron({date.minute} {date.hour} {date.day} {date.month} ? {date.year})'
+    except ValueError:
+        await ctx.channel.send('Not a valid date')
 
 
 @client.command(pass_context=True, brief='Deletes messages')
