@@ -2,3 +2,4 @@
 tokens.yaml
 venv/*
 venv2/*
+packages/*

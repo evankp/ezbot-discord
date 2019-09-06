@@ -1,18 +1,22 @@
 import boto3
 
+from helpers.yaml_helper import read_yaml
+
 events = boto3.client('events')
 """ :type: pyboto3.events"""
+
+DISCORD_TOKEN = read_yaml('tokens')['bot_token']
 
 
 def create_job(event_name):
     return events.put_rule(Name=event_name, ScheduleExpression='rate(1 minute)', State='DISABLED')
 
 
-def put_target():
-    return events.put_targets(Rule='test_event', Targets=[
+def put_target(event_name):
+    return events.put_targets(Rule=event_name, Targets=[
         {
             'Id': '1',
-            'Arn': 'arn:aws:lambda:us-west-1:758538057083:function:terminate-ec2-instance-timed'
+            'Arn': read_yaml('tokens')['lambda_arn']
          }
     ])
 
