@@ -2,3 +2,5 @@
 venv/*
 tokens.yaml
 packages/*
+__pycache__/
+*.pyc
