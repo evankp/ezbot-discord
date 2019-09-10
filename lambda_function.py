@@ -1,8 +1,11 @@
 import requests
+import boto3
 
 from helpers.yaml_helper import read_yaml
 
 TOKEN = read_yaml('tokens')['bot_token']
+
+client = boto3.client('events')
 
 
 def send_discord_message(event, context):
@@ -15,6 +18,16 @@ def send_discord_message(event, context):
                                     'title': event['title'],
                                     'description': event['description']
                                  }
-                             })
+                             }).json()
 
-    return response.json()
+    if 'code' not in response:
+        client.remove_targets(
+            Rule=event['rule'],
+            Ids=[event['target_id']]
+        )
+
+        client.delete_rule(
+            Name=event['rule']
+        )
+
+    return response

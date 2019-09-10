@@ -1,8 +1,11 @@
 import discord
+from discord.ext import commands
 import datetime
 import pytz
+
 from helpers.yaml_helper import read_yaml
-from discord.ext import commands
+from helpers.command_args import Arguments
+import cron_job
 
 TOKEN = read_yaml('tokens')['bot_token']
 client = commands.Bot(command_prefix="!", pm_help=True)
@@ -39,10 +42,16 @@ async def on_message(message):
 
 @client.command(pass_context=True, brief='Set an event')
 async def set_event(ctx, *args):
-    timezone = pytz.timezone(available_timezones[args[3]])
-    requested_date = ' '.join(args[0:3])
+    arguments = Arguments(
+        date=('datetime', '%m/%d/%Y'),
+        time=('datetime', '%I:%M'),
+        period=('datetime', '%p'),
+        timezone=('string', '^[A-Z]{3}$')
+    )
 
-    if args[3] not in available_timezones:
+    parsed_args = arguments.parse(keys=['date', 'time', 'period', 'timezone'], values=args)
+
+    if parsed_args['timezone'] not in available_timezones:
         await ctx.channel.send(f'Timezones supported: '
                                f'{[key for key, value in available_timezones.items()]}.'
                                f' Please contact @Ezoss with the name of the timezone from '
@@ -50,9 +59,18 @@ async def set_event(ctx, *args):
                                f' for timezone to be added')
         return
 
+    timezone = pytz.timezone(available_timezones[parsed_args['timezone']])
+    requested_date = f"{parsed_args['date']} {parsed_args['time']} {parsed_args['period']}"
+
     try:
         date = to_utc(timezone, to_24_time(requested_date))
         cron_statement = f'cron({date.minute} {date.hour} {date.day} {date.month} ? {date.year})'
+        cron_job.create_event(
+            user=ctx.message.author.name,
+            cron_expression=cron_statement,
+            event='test',
+            description='Testing description'
+        )
     except ValueError:
         await ctx.channel.send('Not a valid date')
 
