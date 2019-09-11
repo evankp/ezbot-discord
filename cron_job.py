@@ -10,8 +10,8 @@ events = boto3.client('events')
 DISCORD_TOKEN = read_yaml('tokens')['bot_token']
 
 
-def create_job(user: str, cron: str, event_title: str):
-    rule_name = f'{user}-{event_title}-{random_number(5)}'
+def create_job(user: str, cron: str):
+    rule_name = f'{user}-{random_number(5)}'
 
     rule_arn = events.put_rule(
         Name=rule_name,
@@ -45,7 +45,7 @@ def put_target(user: str, event_title: str, description: str, rule_name: str):
 
 
 def create_event(user: str, cron_expression: str, event: str, description: str):
-    job = create_job(user, cron_expression, event)
+    job = create_job(user, cron_expression)
     target_id = put_target(user, event, description, job['rule_name'])
 
     return {'job': job, 'target_id': target_id}

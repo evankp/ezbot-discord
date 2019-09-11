@@ -1,52 +1,58 @@
 import datetime
 import re
+import pytz
+from discord.ext import commands
 
 
-class MismatchArgument(Exception):
+class IncorrectValue(commands.BadArgument):
     """ Raised when argument does not match specified value"""
     pass
 
 
-class ArgumentDoesNotExist(Exception):
-    """ Raised when an argument provided at parse was not defined when initializing argument object"""
-    pass
+class DateTimeConverter(commands.Converter):
+    def __init__(self, *, compare_string, correct_format):
+        self.compare_string = compare_string
+        self.correct_format = correct_format
+
+    async def convert(self, ctx, argument):
+        try:
+            datetime.datetime.strptime(argument, self.compare_string)
+            return argument
+        except ValueError:
+            raise IncorrectValue(f'Value ({argument}) is not of correct date/time ({self.correct_format})')
 
 
-class Arguments:
-    def __init__(self, **kwargs):
-        self.__argument_types = ['datetime', 'string']
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+class StringMatchConverter(commands.Converter):
+    def __init__(self, *, pattern=None, correct_format=None):
+        self.pattern = pattern
+        self.correct_format = correct_format
 
-    @staticmethod
-    def __assign_arguments(arguments, array):
-        return_args = {}
-        for index, value in enumerate(arguments):
-            return_args[value] = array[index]
+    async def convert(self, ctx, argument):
+        if self.pattern is not None and re.match(self.pattern, argument) is None:
+            raise IncorrectValue(f'{argument} must match "{self.correct_format}"')
 
-        return return_args
+        return argument
 
-    def parse(self, keys, values):
-        assigned_arguments = Arguments.__assign_arguments(keys, values)
-        parsed_values = {}
 
-        for key, value in assigned_arguments.items():
-            if not getattr(self, key):
-                raise ArgumentDoesNotExist
+class TimeZoneConverter(commands.Converter):
+    def __init__(self):
+        self.available_timezones = {
+            'PST': 'America/Los_Angeles',
+            'PDT': 'America/Los_Angeles',
+            'CST': 'America/Chicago',
+            'EST': 'America/New_York',
+            'JST': 'Asia/Tokyo'
+        }
 
-            argument_attr = getattr(self, key)
+    async def convert(self, ctx, argument):
+        if re.match('^[A-Z]{3}$', argument) is None:
+            raise IncorrectValue(f'Value: {argument} does not match timezone abbreviation (EX: PST)')
 
-            if argument_attr[0] == 'string':
-                if re.match(argument_attr[1], value) is None:
-                    raise MismatchArgument(f'{argument_attr[1]}')
-            elif argument_attr[0] == 'datetime':
-                try:
-                    datetime.datetime.strptime(value, argument_attr[1])
-                except ValueError:
-                    raise MismatchArgument(f'Value ({value}) is not of correct time ({argument_attr[1]})')
-            else:
-                argument_attr[0](argument_attr[1], value)
+        if argument not in self.available_timezones:
+            raise IncorrectValue(f'Timezones supported: '
+                                 f'{[key for key, value in self.available_timezones.items()]}.'
+                                 f' Please contact @Ezoss with the name of the timezone from '
+                                 f'https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List'
+                                 f' for timezone to be added')
 
-            parsed_values[key] = value
-
-        return parsed_values
+        return pytz.timezone(self.available_timezones[argument])
