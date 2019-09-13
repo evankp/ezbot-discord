@@ -16,7 +16,26 @@ def send_discord_message(event, context):
                                  'tts': False,
                                  'embed': {
                                     'title': event['title'],
-                                    'description': event['description']
+                                    'thumbnail': {
+                                        'url': 'https://www.pngfind.com/pngs/m/218-2188123_3-star-citizen-logo-png-transparent-png.png'
+                                    },
+                                    'fields': [
+                                        {
+                                            'name': 'Organizer',
+                                            'value': event['user'],
+                                            'inline': True
+                                        },
+                                        {
+                                            'name': 'Date/Time',
+                                            'value': f"{event['time_info']['date']} "
+                                            f"{event['time_info']['time']} \n {event['time_info']['timezone']}",
+                                            'inline': True
+                                        },
+                                        {
+                                            'name': 'Description',
+                                            'value': event['description']
+                                        }
+                                    ]
                                  }
                              }).json()
 

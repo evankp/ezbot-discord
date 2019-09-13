@@ -1,5 +1,6 @@
 import boto3
 import json
+import helpers.database as db
 
 from helpers.yaml_helper import read_yaml
 from helpers.numerical import random_number
@@ -22,7 +23,7 @@ def create_job(user: str, cron: str):
     return {'arn': rule_arn, 'rule_name': rule_name}
 
 
-def put_target(user: str, event_title: str, description: str, rule_name: str):
+def put_target(user: str, event_title: str, description: str, rule_name: str, time_info: dict):
     target_id = f'{user}-{random_number(10)}'
 
     events.put_targets(
@@ -35,7 +36,9 @@ def put_target(user: str, event_title: str, description: str, rule_name: str):
                     'title': event_title,
                     'description': description,
                     'target_id': target_id,
-                    'rule': rule_name
+                    'rule': rule_name,
+                    'user': user,
+                    'time_info': time_info
                 })
              }
         ]
@@ -44,8 +47,15 @@ def put_target(user: str, event_title: str, description: str, rule_name: str):
     return target_id
 
 
-def create_event(user: str, cron_expression: str, event: str, description: str):
+def create_event(user: str, cron_expression: str, event: str, description: str, time_info: dict):
     job = create_job(user, cron_expression)
-    target_id = put_target(user, event, description, job['rule_name'])
+
+    db.add_event(job['rule_name'],
+                 date=time_info['date'],
+                 time=time_info['time'],
+                 timezone=time_info['timezone'],
+                 user=user)
+
+    target_id = put_target(user, event, description, job['rule_name'], time_info)
 
     return {'job': job, 'target_id': target_id}
