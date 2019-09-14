@@ -1,5 +1,5 @@
 boto3
-discord
+discord.py
 pytz
 pyyaml
 requests
