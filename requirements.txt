@@ -2,3 +2,4 @@ boto3
 discord
 pytz
 pyyaml
+requests
