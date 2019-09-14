@@ -19,5 +19,5 @@ done
 aws lambda update-function-code --region $region --function-name $function_name --zip-file fileb://lambda.zip
 
 if [[ $* != *"-d" ]]; then
-    rm lambda.zip
+    rm ${zip_file}
 fi
