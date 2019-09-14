@@ -23,7 +23,7 @@ def create_job(user: str, cron: str):
     return {'arn': rule_arn, 'rule_name': rule_name}
 
 
-def put_target(user: str, event_title: str, description: str, rule_name: str, time_info: dict):
+def put_target(user: str, rule_name: str):
     target_id = f'{user}-{random_number(10)}'
 
     events.put_targets(
@@ -33,12 +33,8 @@ def put_target(user: str, event_title: str, description: str, rule_name: str, ti
                 'Id': target_id,
                 'Arn': read_yaml('tokens')['lambda_arn'],
                 'Input': json.dumps({
-                    'title': event_title,
-                    'description': description,
                     'target_id': target_id,
-                    'rule': rule_name,
-                    'user': user,
-                    'time_info': time_info
+                    'rule': rule_name
                 })
              }
         ]
@@ -54,8 +50,10 @@ def create_event(user: str, cron_expression: str, event: str, description: str, 
                  date=time_info['date'],
                  time=time_info['time'],
                  timezone=time_info['timezone'],
-                 user=user)
+                 user=user,
+                 title=event,
+                 description=description)
 
-    target_id = put_target(user, event, description, job['rule_name'], time_info)
+    target_id = put_target(user, job['rule_name'])
 
     return {'job': job, 'target_id': target_id}

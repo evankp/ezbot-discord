@@ -11,7 +11,7 @@ client = boto3.client('events')
 
 def send_discord_message(event, context):
     channel = read_yaml('tokens')['test_channel']
-    db_event = get_event(event['id'])
+    db_event = get_event(event['rule'])
 
     response = requests.post(f'https://discordapp.com/api/channels/{channel}/messages',
                              headers={'Authorization': f'Bot {TOKEN}', 'Content-Type': 'application/json'},
@@ -42,14 +42,13 @@ def send_discord_message(event, context):
                                  }
                              }).json()
 
-    if 'code' not in response:
-        client.remove_targets(
-            Rule=event['rule'],
-            Ids=[event['target_id']]
-        )
+    client.remove_targets(
+        Rule=event['rule'],
+        Ids=[event['target_id']]
+    )
 
-        client.delete_rule(
-            Name=event['rule']
-        )
+    client.delete_rule(
+        Name=event['rule']
+    )
 
     return response
