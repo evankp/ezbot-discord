@@ -1,10 +1,6 @@
 import requests
-import json
 import yaml
 from datetime import datetime
-
-with open('sc_roadmap_info.json', 'r') as stream:
-    downloaded_data = json.load(stream)
 
 
 def get_releases_raw(output: str = 'dict'):
