@@ -46,7 +46,7 @@ def add_event(event_id, **kwargs):
     for key, value in kwargs.items():
         if isinstance(value, str):
             event[key] = {'S': value}
-        elif isinstance(value, int):
+        elif isinstance(value, int) or isinstance(value, float):
             event[key] = {'N': str(value)}
         elif isinstance(value, list):
             value = [str(item) for item in value]
@@ -63,7 +63,7 @@ def add_event(event_id, **kwargs):
 def get_event(id):
     resp = db.get_item(TableName=events_table, Key={'event_id': {'S': id}})['Item']
 
-    return {key: value['S'] for key, value in resp.items()}
+    return {key: list(value.values())[0] for key, value in resp.items()}
 
 
 if __name__ == '__main__':

@@ -1,8 +1,11 @@
 import requests
 import boto3
+import pytz
+from datetime import datetime
 
 from helpers.yaml_helper import read_yaml
 from helpers.database import get_event
+from helpers.time import to_timezone
 
 TOKEN = read_yaml('tokens')['bot_token']
 
@@ -12,6 +15,8 @@ client = boto3.client('events')
 def send_discord_message(event, context):
     channel = read_yaml('tokens')['test_channel']
     db_event = get_event(event['rule'])
+
+    date = to_timezone(pytz.utc, db_event['date'], db_event['timezone']).strftime('%m/%d/%Y')
 
     response = requests.post(f'https://discordapp.com/api/channels/{channel}/messages',
                              headers={'Authorization': f'Bot {TOKEN}', 'Content-Type': 'application/json'},
@@ -30,8 +35,7 @@ def send_discord_message(event, context):
                                         },
                                         {
                                             'name': 'Date/Time',
-                                            'value': f"{db_event['date']} "
-                                            f"{db_event['time']} \n {db_event['timezone']}",
+                                            'value': f"{date} {db_event['time']} \n {db_event['timezone']}",
                                             'inline': True
                                         },
                                         {

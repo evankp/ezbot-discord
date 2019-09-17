@@ -1,9 +1,9 @@
 import boto3
 import json
-import helpers.database as db
 
+import helpers.database as db
 from helpers.yaml_helper import read_yaml
-from helpers.numerical import random_number
+from helpers.numerical import generate_id
 
 events = boto3.client('events')
 """ :type: pyboto3.events"""
@@ -12,7 +12,7 @@ DISCORD_TOKEN = read_yaml('tokens')['bot_token']
 
 
 def create_job(user: str, cron: str):
-    rule_name = f'{user}-{random_number(5)}'
+    rule_name = generate_id(user.lower())
 
     rule_arn = events.put_rule(
         Name=rule_name,
@@ -24,7 +24,7 @@ def create_job(user: str, cron: str):
 
 
 def put_target(user: str, rule_name: str):
-    target_id = f'{user}-{random_number(10)}'
+    target_id = generate_id(user.lower())
 
     events.put_targets(
         Rule=rule_name,
@@ -46,6 +46,7 @@ def put_target(user: str, rule_name: str):
 def create_event(user: str, cron_expression: str, event: str, description: str, time_info: dict):
     job = create_job(user, cron_expression)
 
+    print(time_info['date'])
     db.add_event(job['rule_name'],
                  date=time_info['date'],
                  time=time_info['time'],

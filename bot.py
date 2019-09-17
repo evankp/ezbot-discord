@@ -87,7 +87,7 @@ async def set_event(ctx,
             event=title,
             description=description,
             time_info={
-                'date': date,
+                'date': date_object.timestamp(),
                 'time': f'{time} {period}',
                 'timezone': str(timezone)
             }
