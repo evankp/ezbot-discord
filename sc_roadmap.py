@@ -25,7 +25,8 @@ def parse_patch_progress(patch):
                 'name': card['name'],
                 'id': id,
                 'description': card['description'],
-                'status': 'Polishing' if card['completed'] == card['tasks'] else 'In Progress'
+                'status': 'Polishing' if card['completed'] == card['tasks'] else 'In Progress',
+                'thumbnail': f"https://robertsspaceindustries.com{card['thumbnail']['urls']['square']}"
             }
 
             if category['status'] == 'In Progress':

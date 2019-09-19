@@ -5,9 +5,10 @@ from helpers.yaml_helper import read_yaml
 from helpers.command_args import IncorrectValue, DateTimeConverter, TimeZoneConverter
 import helpers.time as time_helper
 import cron_job
+import sc_roadmap
 
 TOKEN = read_yaml('tokens')['bot_token']
-client = commands.Bot(command_prefix="!", pm_help=True)
+client = commands.Bot(command_prefix="!", help_command=commands.DefaultHelpCommand(dm_help=True))
 
 #####
 # EVENT DEFINITIONS
@@ -21,8 +22,12 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    if message.author.id != client.user.id:
-        print(f'{message.author.name} said: {message.content}')
+    # if message.author.id != client.user.id:
+    #     print(f'{message.author.name} said: {message.content}')
+
+    if message.content.startswith('!help'):
+        await message.channel.send("DM'ing you help info")
+
     await client.process_commands(message)
 
 
@@ -61,26 +66,26 @@ async def set_event(ctx,
                     description: str
                     ):
     """
-        Discord Chat bot command
         Set an event reminder that will be triggered at the specified time. Uses AWS CloudWatch Events
-        :param ctx: discord.py context object
-        :param date: String in form of MM?/DD/YYYY
-        :param time: String in form of HH:MM in 12 hour format
-        :param period: String in form of AM/PM for 12 hour format
-        :param timezone: Timezone abbrevation, limited to:
+
+        Parameters:
+        <date> - String in form of MM?/DD/YYYY
+        <time> - String in form of HH:MM in 12 hour format
+        <period> - String in form of AM/PM for 12 hour format
+        <timezone>: Timezone abbrevation, limited to:
             'PST': 'America/Los_Angeles',
             'PDT': 'America/Los_Angeles',
             'CST': 'America/Chicago',
             'EST': 'America/New_York',
             'JST': 'Asia/Tokyo'
-        :param title: Title of the event, used in the reminder title
-        :param description: Description of the event, used in the reminder body
-        :return None
+        <title> - Title of the event, used in the reminder title
+        <description> - Description of the event, used in the reminder body
+         None
     """
 
     try:
         date_object = time_helper.to_utc(timezone, time_helper.to_24_time(f"{date} {time} {period}"))
-        cron_statement = f'cron({date_object.minute} {date_object.hour} {date_object.day} {date_object.month} ? {date_object.year})'
+        cron_statement = f'cron({date_object.minute - 1} {date_object.hour} {date_object.day} {date_object.month} ? {date_object.year})'
         cron_job.create_event(
             user=ctx.message.author.name,
             cron_expression=cron_statement,
@@ -108,6 +113,80 @@ async def set_event_error(ctx, error):
                        '["title"] ["description"]')
 
 
+class ConvertToId(commands.Converter):
+    async def convert(self, ctx, argument):
+        return argument.replace(' ', '-').replace('(', '').replace(')', '').lower()
+
+
+@client.command(pass_context=True, brief='Gets patch info')
+async def roadmap_patch(ctx, patch: str):
+    yaml_data = read_yaml('patches-parsed-09-16-2019')
+    patch_data = next((item for item in yaml_data if item['patch'] == patch), None)
+
+    embed = discord.Embed()
+    for category in patch_data['categories']:
+        if category['status'] == 'Polishing':
+            embed_value = f"```{category['status']}```"
+        else:
+            embed_value = f"```{category['status']} - {category['progress']}```"
+
+        embed.add_field(
+            name=category['name'],
+            value=embed_value,
+            inline=False
+        )
+
+    await ctx.send(f"Patch: {patch_data['patch']}, Release Quarter: {patch_data['release_quarter']}", embed=embed)
+
+
+@client.command(pass_context=True, brief='Gets a roadmap category')
+async def roadmap_category(ctx, category: ConvertToId()):
+    yaml_data = read_yaml('patches-parsed-09-16-2019')
+    # patch_data = next((item for item in yaml_data if item['patch'] == patch), None)
+    category_dict = {}
+    patch_name = None
+
+    for patch in yaml_data:
+        for section in patch['categories']:
+            if section['id'] == category:
+                category_dict = section
+                patch_name = patch['patch']
+                break
+
+    if not category_dict:
+        await ctx.send('No category by that name')
+        return
+
+    embed = {
+        'thumbnail': {
+            'url': category_dict['thumbnail']
+        },
+        'title': category_dict['name'],
+        'description': f"Patch: {patch_name} \n \n {category_dict['description']}",
+        'fields': [
+            {
+                'name': 'Task Status',
+                'value': category_dict['status'],
+                'inline': True
+            }
+        ]
+    }
+
+    if category_dict['status'] == 'In Progress':
+        embed['fields'].append({
+            'name': 'Progress',
+            'value': f"{category_dict['progress']}",
+            'inline': True
+        })
+
+        embed['color'] = 16742152
+
+    else:
+        embed['color'] = 65314
+
+    await ctx.send(embed=discord.Embed().from_dict(embed))
+
+
 @client.command(pass_context=True, brief='Deletes messages')
 @commands.has_any_role('Owner', 'Admin')
 async def clear(ctx, num=10):
@@ -123,7 +202,5 @@ async def clear(ctx, num=10):
 
     async for message in ctx.channel.history(limit=number):
         await message.delete()
-
-    print('Done!')
 
 client.run(TOKEN)

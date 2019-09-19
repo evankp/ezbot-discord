@@ -46,7 +46,6 @@ def put_target(user: str, rule_name: str):
 def create_event(user: str, cron_expression: str, event: str, description: str, time_info: dict):
     job = create_job(user, cron_expression)
 
-    print(time_info['date'])
     db.add_event(job['rule_name'],
                  date=time_info['date'],
                  time=time_info['time'],

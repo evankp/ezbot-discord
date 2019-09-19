@@ -4,3 +4,4 @@ tokens.yaml
 packages/*
 __pycache__/
 *.pyc
+patches-parsed-*.yaml
