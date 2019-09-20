@@ -5,17 +5,29 @@ from helpers.yaml_helper import read_yaml
 from helpers.converters import ConvertToId
 
 
-class RoadmapCog(commands.Cog):
+class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_context=True)):
     def __init__(self, client):
         self.client = client
 
-    @commands.group()
+    @commands.group(brief='Get info on the current roadmap.')
     async def roadmap(self, ctx):
+        """
+        Gets updates from the SC Roadmap https://robertsspaceindustries.com/roadmap/board/1-Star-Citizen
+
+        Commands:
+        !roadmap patch [patch number] - gets patch details
+        !roadmap category ["name"] - Gets a feature category. Surround with quotes for spaces
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send('Roadmap commands are !roadmap patch [patch] and !roadmap category "category name"')
 
-    @roadmap.command(pass_context=True, brief='Gets patch info')
+    @roadmap.command(brief='Gets patch info')
     async def patch(self, ctx, patch: str):
+        """
+            Gets details of a patch and it's categories. !roadmap category can be used for each category
+
+            patch - Patch number.
+        """
         yaml_data = read_yaml('patches-parsed-09-16-2019')
         patch_data = next((item for item in yaml_data if item['patch'] == patch), None)
 
@@ -34,10 +46,15 @@ class RoadmapCog(commands.Cog):
 
         await ctx.send(f"Patch: {patch_data['patch']}, Release Quarter: {patch_data['release_quarter']}", embed=embed)
 
-    @roadmap.command(pass_context=True, brief='Gets a roadmap category')
+    @roadmap.command(brief='Gets a roadmap category')
     async def category(self, ctx, category: ConvertToId()):
+        """
+            Gets a feature category. Surround with quotes for spaces
+
+            "name" - Category Name. Surround with quotes for spaces
+        """
+
         yaml_data = read_yaml('patches-parsed-09-16-2019')
-        # patch_data = next((item for item in yaml_data if item['patch'] == patch), None)
         category_dict = {}
         patch_name = None
 

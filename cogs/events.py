@@ -6,24 +6,29 @@ import helpers.time as time_helper
 import cron_job
 
 
-class EventsCog(commands.Cog):
+class EventsCog(commands.Cog, name='Event Command', command_attrs=dict(pass_context=True)):
     def __init__(self, client):
         self.client = client
 
-    @commands.group()
+    @commands.group(brief='Event reminders and useful functions.')
     async def event(self, ctx):
+        """
+            Various functions for event reminders
+
+            !event set - Set an event
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send('Event commands are !events set [patch]')
 
-    @event.command(pass_context=True, brief='Set an event')
+    @event.command(brief='Set an event')
     async def set(self, ctx,
-                        date: DateTimeConverter(compare_string='%m/%d/%Y', correct_format='MM/DD/YYYY'),
-                        time: DateTimeConverter(compare_string='%I:%M', correct_format='HH:MM (12 hour format)'),
-                        period: DateTimeConverter(compare_string='%p', correct_format='AM/PM'),
-                        timezone: TimeZoneConverter(),
-                        title: str,
-                        description: str
-                        ):
+                  date: DateTimeConverter(compare_string='%m/%d/%Y', correct_format='MM/DD/YYYY'),
+                  time: DateTimeConverter(compare_string='%I:%M', correct_format='HH:MM (12 hour format)'),
+                  period: DateTimeConverter(compare_string='%p', correct_format='AM/PM'),
+                  timezone: TimeZoneConverter(),
+                  title: str,
+                  description: str
+                  ):
         """
             Set an event reminder that will be triggered at the specified time. Uses AWS CloudWatch Events
 
@@ -59,16 +64,16 @@ class EventsCog(commands.Cog):
         except ValueError as error:
             await ctx.channel.send(error)
 
-    @set.error
-    async def set_error(self, ctx, error):
-        if isinstance(error, IncorrectValue):
-            await ctx.send(error)
-        elif isinstance(error, commands.ConversionError):
-            print(error)
-        else:
-            print(error)
-            await ctx.send('Correct command format is !set_event [MM/DD/YYYY] [HH:MM] [AM/PM] [TIMEZONE] '
-                           '["title"] ["description"]')
+    # @set.error
+    # async def set_error(self, ctx, error):
+    #     if isinstance(error, IncorrectValue):
+    #         await ctx.send(error)
+    #     elif isinstance(error, commands.ConversionError):
+    #         print(error)
+    #     else:
+    #         print(error)
+    #         await ctx.send('Correct command format is !set_event [MM/DD/YYYY] [HH:MM] [AM/PM] [TIMEZONE] '
+    #                        '["title"] ["description"]')
 
 
 def setup(client):

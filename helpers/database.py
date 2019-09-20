@@ -5,6 +5,7 @@ db = boto3.client('dynamodb', region_name='us-west-2')
 """ :type: pyboto3.dynamodb """
 
 events_table = 'usc_events'
+ship_table = 'usc_ships'
 
 DB_TYPES = {
     'list': 'L',
@@ -66,5 +67,35 @@ def get_event(id):
     return {key: list(value.values())[0] for key, value in resp.items()}
 
 
+def create_user_row(user, data):
+    db_dict = {
+        'user': {'S': user},
+        'ship_number': {'N': str(data['number'])},
+        'ships': {'SS': data['ships']}
+
+    }
+
+    return db.put_item(
+        TableName=ship_table,
+        Item=db_dict
+    )
+
+
+def get_user_ships(user):
+    resp = db.get_item(TableName=ship_table, Key={'user': {'S': user}})['Item']
+    return_dict = {}
+
+    for key, value in resp.items():
+        item_value = list(value.values())[0]
+
+        if list(value.keys())[0] == 'N':
+            item_value = int(item_value)
+
+        return_dict[key] = item_value
+
+    return return_dict
+
+
 if __name__ == '__main__':
-    pprint(get_event('Ezoss-29684'))
+    # pprint(create_user_row('Ezoss', {'number': 21, 'ships': ['100i', '300i']}))
+    pprint(get_user_ships('Ezoss'))
