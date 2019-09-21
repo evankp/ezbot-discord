@@ -1,6 +1,10 @@
 import requests
 import yaml
 from datetime import datetime
+from pprint import pprint
+from operator import itemgetter
+
+import helpers.yaml_helper as yaml_functions
 
 
 def get_releases_raw(output: str = 'dict'):
@@ -70,5 +74,64 @@ def get_releases_parsed(output: str = 'dict'):
     return patches
 
 
+def compare_patch_differences(old_data, new_data):
+    total_changes = []
+
+    for new_patch in new_data:
+        patch_name = new_patch['patch']
+        old_patch = None
+        patch_changes = {}
+
+        # Get same patch data object
+        for patch in old_data:
+            if patch['patch'] != patch_name:
+                continue
+
+            old_patch = patch
+
+        # If patch is not in old data, pass for now.
+        if old_patch is None:
+            continue
+
+        # Compare new IDs with old ids to see if any was added or removed
+        new_ids = [item['id'] for item in new_patch['categories']]
+        old_ids = [item['id'] for item in old_patch['categories']]
+
+        patch_changes['added'] = [id for id in new_ids if id not in old_ids]
+        patch_changes['removed'] = [id for id in old_ids if id not in new_ids]
+
+        # Check categories for any updates
+        patch_changes['updated'] = []
+        for category in new_patch['categories']:
+            if category['id'] in patch_changes['added'] or category['id'] in patch_changes['removed']:
+                continue
+
+            old_category = next((item for item in old_patch['categories'] if item['id'] == category['id']), None)
+
+            category_changes = category.items() - old_category.items()
+            if category_changes:
+                category_updates = {
+                    'category': category['id'],
+                    'old_values': [old_category[change[0]] for change in category_changes],
+                    'attribute_updates': [change for change in category_changes]
+                }
+
+                for change in category_changes:
+                    if change[0] not in category:
+                        category_updates['attribute_updates'].append()
+
+                patch_changes['updated'].append(category_updates)
+
+        # Add patch changes to global patch change list
+        total_changes.append({'patch': patch_name, 'changes': patch_changes})
+
+    return total_changes
+
+
 if __name__ == '__main__':
-    get_releases_parsed('file')
+    # get_releases_parsed('file')
+
+    pprint(compare_patch_differences(
+        old_data=yaml_functions.read_yaml('patches-parsed-09-16-2019'),
+        new_data=yaml_functions.read_yaml('patches-parsed-09-20-2019')
+    ))
