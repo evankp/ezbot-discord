@@ -46,13 +46,16 @@ def put_target(user: str, rule_name: str):
 def create_event(user: str, cron_expression: str, event: str, description: str, time_info: dict):
     job = create_job(user, cron_expression)
 
-    db.add_event(job['rule_name'],
-                 date=time_info['date'],
-                 time=time_info['time'],
-                 timezone=time_info['timezone'],
-                 user=user,
-                 title=event,
-                 description=description)
+    event_table = db.Table('usc_events', 'event_id')
+
+    event_table.set_item(job['rule_name'],
+                         date=time_info['date'],
+                         time=time_info['time'],
+                         timezone=time_info['timezone'],
+                         user=user,
+                         title=event,
+                         description=description
+                         )
 
     target_id = put_target(user, job['rule_name'])
 

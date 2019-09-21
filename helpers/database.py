@@ -128,4 +128,5 @@ if __name__ == '__main__':
     # pprint(ships.get_item('Landscaper'))
     # pprint(ships.get_item('Ezoss'))
     # pprint(ships.set_item('Ezoss', ships=['Kraken', '300i', '100i'], number=3))
-    ships.update_item('Ezoss', ship_number=3, ships=['Kraken', '300i', '100i'])
+    # ships.update_item('Ezoss', ship_number=3, ships=['Kraken', '300i', '100i'])
+    pass

@@ -2,7 +2,6 @@ import requests
 import yaml
 from datetime import datetime
 from pprint import pprint
-from operator import itemgetter
 
 import helpers.yaml_helper as yaml_functions
 
@@ -19,6 +18,7 @@ def get_releases_raw(output: str = 'dict'):
     return resp['data']['releases']
 
 
+# Parse individual patches
 def parse_patch_progress(patch):
     if patch:
         categories = []
@@ -44,6 +44,7 @@ def parse_patch_progress(patch):
         }
 
 
+# Parse all patches not released
 def get_releases_parsed(output: str = 'dict'):
     patches = []
     data = get_releases_raw()
@@ -74,7 +75,7 @@ def get_releases_parsed(output: str = 'dict'):
     return patches
 
 
-def compare_patch_differences(old_data, new_data):
+def compare_patch_differences(old_data, new_data, output: str = 'dict'):
     total_changes = []
 
     for new_patch in new_data:
@@ -112,26 +113,39 @@ def compare_patch_differences(old_data, new_data):
             if category_changes:
                 category_updates = {
                     'category': category['id'],
-                    'old_values': [old_category[change[0]] for change in category_changes],
-                    'attribute_updates': [change for change in category_changes]
+                    'attribute_updates': []
                 }
 
                 for change in category_changes:
-                    if change[0] not in category:
-                        category_updates['attribute_updates'].append()
+                    old_attr = None
 
+                    try:
+                        old_attr = old_category[change[0]]
+                    except KeyError:
+                        pass
+
+                    category_updates['attribute_updates'].append(
+                        {'attribute': change[0], 'old': old_attr, 'new': change[1]})
                 patch_changes['updated'].append(category_updates)
 
         # Add patch changes to global patch change list
         total_changes.append({'patch': patch_name, 'changes': patch_changes})
 
+    if output == 'file':
+        file = f"roadmap-update-{datetime.now().strftime('%m-%d-%Y')}"
+        yaml_functions.save_to_yaml(file,
+                                    {'date': datetime.now().timestamp(), 'updates': total_changes})
+
+        return f'Saved to {file}.yaml'
+
     return total_changes
 
 
 if __name__ == '__main__':
-    # get_releases_parsed('file')
+    print(get_releases_parsed())
 
-    pprint(compare_patch_differences(
-        old_data=yaml_functions.read_yaml('patches-parsed-09-16-2019'),
-        new_data=yaml_functions.read_yaml('patches-parsed-09-20-2019')
-    ))
+    # print(compare_patch_differences(
+    #     old_data=yaml_functions.read_yaml('patches-parsed-09-16-2019'),
+    #     new_data=yaml_functions.read_yaml('patches-parsed-09-20-2019'),
+    #     output='file'
+    # ))
