@@ -1,8 +1,10 @@
 import discord
 from discord.ext import commands
 
-from helpers.yaml_helper import read_yaml
+from datetime import datetime
 from helpers.converters import ConvertToId
+import helpers.sc_roadmap as roadmap_helper
+import helpers.yaml_helper as yaml_helper
 
 
 class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_context=True)):
@@ -13,10 +15,6 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
     async def roadmap(self, ctx):
         """
         Gets updates from the SC Roadmap https://robertsspaceindustries.com/roadmap/board/1-Star-Citizen
-
-        Commands:
-        !roadmap patch [patch number] - gets patch details
-        !roadmap category ["name"] - Gets a feature category. Surround with quotes for spaces
         """
         if ctx.invoked_subcommand is None:
             await ctx.send('Roadmap commands are !roadmap patch [patch] and !roadmap category "category name"')
@@ -28,8 +26,8 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
 
             patch - Patch number.
         """
-        yaml_data = read_yaml('patches-parsed-09-16-2019')
-        patch_data = next((item for item in yaml_data if item['patch'] == patch), None)
+        data = roadmap_helper.get_releases_parsed()
+        patch_data = next((item for item in data if item['patch'] == patch), None)
 
         embed = discord.Embed()
         for category in patch_data['categories']:
@@ -46,6 +44,59 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
 
         await ctx.send(f"Patch: {patch_data['patch']}, Release Quarter: {patch_data['release_quarter']}", embed=embed)
 
+    @roadmap.command(brief='Gets patch updates')
+    async def patch_updates(self, ctx, patch: str):
+        """
+        Get updates to patch since last roadmap update
+
+        patch - patch number
+        """
+        data = roadmap_helper.get_latest_patch_updates(patch)
+        update_date = datetime.fromtimestamp(data['date']).strftime('%B %d, %Y')
+        # new_patch_data = next((item for item in roadmap_helper.get_releases_parsed() if item['patch'] == patch))
+        new_patch_data = next((item for item in yaml_helper.read_yaml('patches-parsed-09-20-2019')
+                               if item['patch'] == patch))
+
+        embed = discord.Embed()
+
+        for key, value in data['updates'].items():
+            update = 'None'
+            if value:
+                update = ''
+                if key == 'added':
+                    for category in value:
+                        category_data = next((item for item in new_patch_data['categories'] if item['id'] == category))
+
+                        update += f"{category_data['name']} \n ```{category_data['description']}``` \n \n"
+
+                elif key == 'removed':
+                    # TODO: Need to update update method to account for features being removed/moved better
+                    # Placeholder
+                    update = value
+
+                elif key == 'updated':
+                    for category_update in value:
+                        category_data = next((item for item in new_patch_data['categories']
+                                              if item['id'] == category_update['category']))
+
+                        update += f"__{category_data['name']}__\n\n"
+
+                        for attribute_update in category_update['attribute_updates']:
+                            update += f"{attribute_update['attribute'].capitalize()}\n"
+                            if not attribute_update['old']:
+                                update += f"``` None -> {attribute_update['new']}```\n"
+                            else:
+                                update += f"``` {attribute_update['old']} -> {attribute_update['new']}```\n"
+                else:
+                    update = value
+
+                # if update.startswith('None'):
+                #     update.replace('None', '')
+
+            embed.add_field(name=key.capitalize(), value=update, inline=False)
+
+        await ctx.send(f'{patch} Updates - {update_date}', embed=embed)
+
     @roadmap.command(brief='Gets a roadmap category')
     async def category(self, ctx, category: ConvertToId()):
         """
@@ -54,11 +105,11 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
             "name" - Category Name. Surround with quotes for spaces
         """
 
-        yaml_data = read_yaml('patches-parsed-09-16-2019')
+        data = roadmap_helper.get_releases_parsed()
         category_dict = {}
         patch_name = None
 
-        for patch in yaml_data:
+        for patch in data:
             for section in patch['categories']:
                 if section['id'] == category:
                     category_dict = section

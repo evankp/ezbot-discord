@@ -3,7 +3,7 @@ from discord.ext import commands
 from helpers.yaml_helper import read_yaml
 
 TOKEN = read_yaml('tokens')['bot_token']
-client = commands.Bot(command_prefix="!", help_command=commands.DefaultHelpCommand(dm_help=True))
+client = commands.Bot(command_prefix="!")
 
 COGS = [
     # 'cogs.events',
@@ -22,9 +22,6 @@ async def on_message(message):
     # if message.author.id != client.user.id:
     #     print(f'{message.author.name} said: {message.content}')
 
-    if message.content.startswith('!help'):
-        await message.channel.send("DM'ing you help info")
-
     await client.process_commands(message)
 
 
@@ -32,6 +29,9 @@ async def on_message(message):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send(f'Command "{ctx.message.content.split(" ")[0].replace("!", "")}"" not found')
+    else:
+        await ctx.send('An unknown/code error happened!')
+        print(error)
     # ignore_global_action = ['event set']
     # command_name = ''
     #

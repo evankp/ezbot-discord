@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 
 
@@ -22,3 +22,9 @@ def to_timezone(timezone, date, target_timezone):
 
 def to_utc(timezone, date):
     return to_timezone(timezone, date, pytz.utc)
+
+
+def days_ago(days, date=datetime.today().strftime('%m/%d/%Y')):
+    date = datetime.strptime(date, '%m/%d/%Y')
+    destination_date = date - timedelta(days=days)
+    return destination_date.strftime('%m/%d/%Y')

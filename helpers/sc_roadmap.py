@@ -45,7 +45,7 @@ def parse_patch_progress(patch):
 
 
 # Parse all patches not released
-def get_releases_parsed(output: str = 'dict'):
+def get_releases_parsed(output: str = 'list'):
     patches = []
     data = get_releases_raw()
     for patch in data:
@@ -138,7 +138,17 @@ def compare_patch_differences(old_data, new_data, output: str = 'dict'):
 
         return f'Saved to {file}.yaml'
 
-    return total_changes
+    return {'date': datetime.now().timestamp(), 'updates': total_changes}
+
+
+def get_latest_patch_updates(patch=None):
+    update = yaml_functions.read_yaml('roadmap-update-latest')
+
+    if patch:
+        return {'date': update['date'],
+                'updates': next((update['changes'] for update in update['updates'] if update['patch'] == patch), None)}
+
+    return update
 
 
 if __name__ == '__main__':

@@ -4,5 +4,8 @@ tokens.yaml
 packages/*
 __pycache__/
 *.pyc
+
+# files that store parsing data
 patches-parsed-*.yaml
 usc-ship-roster.*
+roadmap-update-*.yaml
