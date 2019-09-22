@@ -5,8 +5,11 @@ from datetime import datetime
 from helpers.converters import ConvertToId
 import helpers.sc_roadmap as roadmap_helper
 import helpers.yaml_helper as yaml_helper
+from helpers.time import last_update_date
 
 
+# For the roadmap commands to work, the get_releases_parsed function needs to be run in helpers/sc-roadmap.py,
+# the updates command needs to have two weeks worth of data, but will just respond with not enough data
 class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_context=True)):
     def __init__(self, client):
         self.client = client
@@ -26,7 +29,7 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
 
             patch - Patch number.
         """
-        data = roadmap_helper.get_releases_parsed()
+        data = yaml_helper.read_yaml(f'patches-parsed-{last_update_date()}')
         patch_data = next((item for item in data if item['patch'] == patch), None)
 
         embed = discord.Embed()
@@ -45,16 +48,19 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
         await ctx.send(f"Patch: {patch_data['patch']}, Release Quarter: {patch_data['release_quarter']}", embed=embed)
 
     @roadmap.command(brief='Gets patch updates')
-    async def patch_updates(self, ctx, patch: str):
+    async def updates(self, ctx, patch: str):
         """
         Get updates to patch since last roadmap update
 
         patch - patch number
         """
         data = roadmap_helper.get_latest_patch_updates(patch)
+        if 'error' in data:
+            await ctx.send(data['error'])
+            return
+
         update_date = datetime.fromtimestamp(data['date']).strftime('%B %d, %Y')
-        # new_patch_data = next((item for item in roadmap_helper.get_releases_parsed() if item['patch'] == patch))
-        new_patch_data = next((item for item in yaml_helper.read_yaml('patches-parsed-09-20-2019')
+        new_patch_data = next((item for item in yaml_helper.read_yaml(f'patches-parsed-{last_update_date()}')
                                if item['patch'] == patch))
 
         embed = discord.Embed()
@@ -90,9 +96,6 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
                 else:
                     update = value
 
-                # if update.startswith('None'):
-                #     update.replace('None', '')
-
             embed.add_field(name=key.capitalize(), value=update, inline=False)
 
         await ctx.send(f'{patch} Updates - {update_date}', embed=embed)
@@ -105,7 +108,7 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
             "name" - Category Name. Surround with quotes for spaces
         """
 
-        data = roadmap_helper.get_releases_parsed()
+        data = yaml_helper.read_yaml(f'patches-parsed-{last_update_date()}')
         category_dict = {}
         patch_name = None
 

@@ -142,7 +142,10 @@ def compare_patch_differences(old_data, new_data, output: str = 'dict'):
 
 
 def get_latest_patch_updates(patch=None):
-    update = yaml_functions.read_yaml('roadmap-update-latest')
+    try:
+        update = yaml_functions.read_yaml('roadmap-update-latest')
+    except FileNotFoundError:
+        return {'error': 'Not enough data collected for updates yet!'}
 
     if patch:
         return {'date': update['date'],
