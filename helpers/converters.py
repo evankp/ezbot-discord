@@ -61,3 +61,9 @@ class TimeZoneConverter(commands.Converter):
 class ConvertToId(commands.Converter):
     async def convert(self, ctx, argument):
         return argument.replace(' ', '-').replace('(', '').replace(')', '').lower()
+
+
+class Capitalize(commands.Converter):
+    async def convert(self, ctx, argument):
+        arg = " ".join(w.capitalize() for w in str(argument).split())
+        return arg
