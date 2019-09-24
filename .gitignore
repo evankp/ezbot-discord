@@ -6,6 +6,6 @@ __pycache__/
 *.pyc
 
 # files that store parsing data
-patches-parsed-*.yaml
+patch-data/
 usc-ship-roster.*
 roadmap-update-*.yaml

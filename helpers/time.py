@@ -30,7 +30,7 @@ def days_ago(days, date=datetime.today().strftime('%m/%d/%Y')):
     return destination_date.strftime('%m/%d/%Y')
 
 
-def last_update_date(date: str = datetime.today().strftime('%m/%d/%Y')):
+def last_update_date(date: str = datetime.today().strftime('%m/%d/%Y'), datetime_obj: bool = False):
     date = datetime.strptime(date, '%m/%d/%Y')
     weekday = date.weekday()
     days_to_friday = weekday - 4
@@ -39,8 +39,20 @@ def last_update_date(date: str = datetime.today().strftime('%m/%d/%Y')):
         days_to_friday *= -1
 
     if weekday > 4:
-        return (date - timedelta(days=days_to_friday)).strftime('%m-%d-%Y')
+        dt = (date - timedelta(days=days_to_friday))
+        if not datetime_obj:
+            return dt.strftime('%m-%d-%Y')
+
+        return dt
     elif weekday < 4:
-        return ((date + timedelta(days=days_to_friday)) - timedelta(weeks=1)).strftime('%m-%d-%Y')
+        dt = ((date + timedelta(days=days_to_friday)) - timedelta(weeks=1))
+
+        if not datetime_obj:
+            return dt.strftime('%m-%d-%Y')
+
+        return dt
     else:
-        return date.strftime('%m-%d-%Y')
+        if not datetime_obj:
+            return date.strftime('%m-%d-%Y')
+
+        return date

@@ -1,16 +1,18 @@
 import requests
 import yaml
-from datetime import datetime
-from pprint import pprint
+from datetime import datetime, timedelta
 
 import helpers.yaml_helper as yaml_functions
+from helpers.time import last_update_date
 
 
 def get_releases_raw(output: str = 'dict'):
     resp = requests.get('https://robertsspaceindustries.com/api/roadmap/v1/boards/1').json()
 
     if output == 'file':
-        with open(f'sc-roadmap-data-{datetime.now().date().strftime("%m-%d-%Y")}.yaml', 'w') as file:
+        file_name = f'patch-data/sc-roadmap-data-{last_update_date()}.yaml'
+
+        with open(file_name, 'w') as file:
             yaml.safe_dump(resp['data']['releases'], file)
 
         return
@@ -67,7 +69,8 @@ def get_releases_parsed(output: str = 'list'):
         patches.append(patch_dict)
 
     if output == 'file':
-        with open(f'patches-parsed-{datetime.now().date().strftime("%m-%d-%Y")}.yaml', 'w') as file:
+        yaml_functions.save_to_yaml(f'patch-data/patches-parsed-{last_update_date()}', patches)
+        with open(f'patch-data/patches-parsed-{last_update_date()}.yaml', 'w') as file:
             yaml.safe_dump(patches, file, sort_keys=False)
 
         return
@@ -75,8 +78,20 @@ def get_releases_parsed(output: str = 'list'):
     return patches
 
 
-def compare_patch_differences(old_data, new_data, output: str = 'dict'):
+def compare_patch_differences(old_data=None, new_data=None, output: str = 'dict'):
     total_changes = []
+
+    old_file = f"patch-data/patches-parsed-{(last_update_date(datetime_obj=True) - timedelta(weeks=1)).strftime('%m-%d-%Y')}"
+    new_file = f"patch-data/patches-parsed-{last_update_date()}"
+
+    try:
+        if old_data is None:
+            old_data = yaml_functions.read_yaml(old_file)
+
+        if new_data is None:
+            new_data = yaml_functions.read_yaml(new_file)
+    except FileNotFoundError as error:
+        return {'error': str(error)}
 
     for new_patch in new_data:
         patch_name = new_patch['patch']
@@ -132,9 +147,9 @@ def compare_patch_differences(old_data, new_data, output: str = 'dict'):
         total_changes.append({'patch': patch_name, 'changes': patch_changes})
 
     if output == 'file':
-        file = f"roadmap-update-{datetime.now().strftime('%m-%d-%Y')}"
+        file = f"patch-data/roadmap-update-{last_update_date()}"
         yaml_functions.save_to_yaml(file,
-                                    {'date': datetime.now().timestamp(), 'updates': total_changes})
+                                    {'date': last_update_date(datetime_obj=True).timestamp(), 'updates': total_changes})
 
         return f'Saved to {file}.yaml'
 
@@ -143,7 +158,7 @@ def compare_patch_differences(old_data, new_data, output: str = 'dict'):
 
 def get_latest_patch_updates(patch=None):
     try:
-        update = yaml_functions.read_yaml('roadmap-update-latest')
+        update = yaml_functions.read_yaml(f'patch-data/roadmap-update-{last_update_date()}')
     except FileNotFoundError:
         return {'error': 'Not enough data collected for updates yet!'}
 
@@ -157,6 +172,7 @@ def get_latest_patch_updates(patch=None):
 if __name__ == '__main__':
     print(get_releases_parsed())
 
+    # print(get_releases_raw('file'))
     # print(compare_patch_differences(
     #     old_data=yaml_functions.read_yaml('patches-parsed-09-16-2019'),
     #     new_data=yaml_functions.read_yaml('patches-parsed-09-20-2019'),
