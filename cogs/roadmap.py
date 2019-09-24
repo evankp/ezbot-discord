@@ -6,7 +6,7 @@ from helpers.converters import ConvertToId
 import helpers.sc_roadmap as roadmap_helper
 import helpers.yaml_helper as yaml_helper
 from helpers.time import last_update_date
-
+from helpers.cog_funcs import *
 
 # For the roadmap commands to work, the get_releases_parsed function needs to be run in helpers/sc-roadmap.py,
 # the updates command needs to have two weeks worth of data, but will just respond with not enough data
@@ -20,7 +20,8 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
         Gets updates from the SC Roadmap https://robertsspaceindustries.com/roadmap/board/1-Star-Citizen
         """
         if ctx.invoked_subcommand is None:
-            await ctx.send('Roadmap commands are !roadmap patch [patch] and !roadmap category "category name"')
+            await ctx.send(cog_help(ctx))
+
 
     @roadmap.command(brief='Gets patch info')
     async def patch(self, ctx, patch: str):

@@ -3,6 +3,8 @@ from discord.ext import commands
 
 from helpers.converters import IncorrectValue, DateTimeConverter, TimeZoneConverter
 import helpers.time as time_helper
+from helpers.cog_funcs import *
+
 import cron_job
 
 
@@ -18,7 +20,7 @@ class EventsCog(commands.Cog, name='Event Command', command_attrs=dict(pass_cont
             !event set - Set an event
         """
         if ctx.invoked_subcommand is None:
-            await ctx.send('Event commands are !events set [patch]')
+            await ctx.send(cog_help(ctx))
 
     @event.command(brief='Set an event')
     async def set(self, ctx,

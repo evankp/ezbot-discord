@@ -4,6 +4,7 @@ import typing
 
 from helpers.ships import get_user_ships, add_ships, remove_ships
 from helpers.converters import Capitalize
+from helpers.cog_funcs import *
 
 
 class ShipCog(commands.Cog, name='Ship Command', command_attrs=dict(pass_context=True)):
@@ -13,7 +14,7 @@ class ShipCog(commands.Cog, name='Ship Command', command_attrs=dict(pass_context
     @commands.group(brief='USC ship functions - Get/set your fleet and ships')
     async def ships(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send('Ship commands are !ships get [Optional: user]')
+            await ctx.send(cog_help(ctx))
 
     @ships.command()
     async def get(self, ctx, user: typing.Optional[typing.Union[discord.Member, str]]):

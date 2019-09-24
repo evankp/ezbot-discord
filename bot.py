@@ -28,7 +28,7 @@ async def on_message(message):
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
-        await ctx.send(f'Command "{ctx.message.content.split(" ")[0].replace("!", "")}"" not found')
+        await ctx.send(f'Command "{ctx.message.content.split(" ")[0].replace("!", "")}" not found')
     else:
         await ctx.send('An unknown/code error happened!')
         print(error)
