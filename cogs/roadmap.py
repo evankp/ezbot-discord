@@ -26,22 +26,23 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
     @roadmap.command(brief='Gets patch info')
     async def patch(self, ctx, patch: str):
         """
-            Gets details of a patch and it's categories. !roadmap category can be used for each category
+            Gets details of a patch and it's feature. !roadmap feature can be used for each feature
 
             patch - Patch number.
         """
+        roadmap_helper.download_patch_data_s3()
         data = yaml_helper.read_yaml(f'patch-data/patches-parsed-{last_update_date()}')
         patch_data = next((item for item in data if item['patch'] == patch), None)
 
         embed = discord.Embed()
-        for category in patch_data['categories']:
-            if category['status'] == 'Polishing':
-                embed_value = f"```{category['status']}```"
+        for feature in patch_data['features']:
+            if feature['status'] == 'Polishing':
+                embed_value = f"```{feature['status']}```"
             else:
-                embed_value = f"```{category['status']} - {category['progress']}```"
+                embed_value = f"```{feature['status']} - {feature['progress']}```"
 
             embed.add_field(
-                name=category['name'],
+                name=feature['name'],
                 value=embed_value,
                 inline=False
             )
@@ -55,6 +56,7 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
 
         patch - patch number
         """
+        roadmap_helper.download_patch_data_s3()
         data = roadmap_helper.get_latest_patch_updates(patch)
         if 'error' in data:
             await ctx.send(data['error'])
@@ -71,10 +73,10 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
             if value:
                 update = ''
                 if key == 'added':
-                    for category in value:
-                        category_data = next((item for item in new_patch_data['categories'] if item['id'] == category))
+                    for feature in value:
+                        feature_data = next((item for item in new_patch_data['features'] if item['id'] == feature))
 
-                        update += f"{category_data['name']} \n ```{category_data['description']}``` \n \n"
+                        update += f"{feature_data['name']} \n ```{feature_data['description']}``` \n \n"
 
                 elif key == 'removed':
                     # TODO: Need to update update method to account for features being removed/moved better
@@ -82,13 +84,13 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
                     update = value
 
                 elif key == 'updated':
-                    for category_update in value:
-                        category_data = next((item for item in new_patch_data['categories']
-                                              if item['id'] == category_update['category']))
+                    for feature_update in value:
+                        feature_data = next((item for item in new_patch_data['features']
+                                              if item['id'] == feature_update['feature']))
 
-                        update += f"__{category_data['name']}__\n\n"
+                        update += f"__{feature_data['name']}__\n\n"
 
-                        for attribute_update in category_update['attribute_updates']:
+                        for attribute_update in feature_update['attribute_updates']:
                             update += f"{attribute_update['attribute'].capitalize()}\n"
                             if not attribute_update['old']:
                                 update += f"``` None -> {attribute_update['new']}```\n"
@@ -101,48 +103,48 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
 
         await ctx.send(f'{patch} Updates - {update_date}', embed=embed)
 
-    @roadmap.command(brief='Gets a roadmap category')
-    async def category(self, ctx, category: ConvertToId()):
+    @roadmap.command(brief='Gets a roadmap feature')
+    async def feature(self, ctx, feature: ConvertToId()):
         """
-            Gets a feature category. Surround with quotes for spaces
+            Gets a feature. Surround with quotes for spaces
 
-            "name" - Category Name. Surround with quotes for spaces
+            "name" - Feature Name. Surround with quotes for spaces
         """
-
+        roadmap_helper.download_patch_data_s3()
         data = yaml_helper.read_yaml(f'patch-data/patches-parsed-{last_update_date()}')
-        category_dict = {}
+        feature_dict = {}
         patch_name = None
 
         for patch in data:
-            for section in patch['categories']:
-                if section['id'] == category:
-                    category_dict = section
+            for section in patch['features']:
+                if section['id'] == feature:
+                    feature_dict = section
                     patch_name = patch['patch']
                     break
 
-        if not category_dict:
-            await ctx.send('No category by that name')
+        if not feature_dict:
+            await ctx.send('No feature by that name')
             return
 
         embed = {
             'thumbnail': {
-                'url': category_dict['thumbnail']
+                'url': feature_dict['thumbnail']
             },
-            'title': category_dict['name'],
-            'description': f"Patch: {patch_name} \n \n {category_dict['description']}",
+            'title': feature_dict['name'],
+            'description': f"Patch: {patch_name} \n \n {feature_dict['description']}",
             'fields': [
                 {
                     'name': 'Task Status',
-                    'value': category_dict['status'],
+                    'value': feature_dict['status'],
                     'inline': True
                 }
             ]
         }
 
-        if category_dict['status'] == 'In Progress':
+        if feature_dict['status'] == 'In Progress':
             embed['fields'].append({
                 'name': 'Progress',
-                'value': f"{category_dict['progress']}",
+                'value': f"{feature_dict['progress']}",
                 'inline': True
             })
 
