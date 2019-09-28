@@ -29,6 +29,8 @@ async def on_message(message):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send(f'Command "{ctx.message.content.split(" ")[0].replace("!", "")}" not found')
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f'Missing the required "{str(error).split(" ")[0]}" parameter')
     else:
         await ctx.send('An unknown/code error happened!')
         print(error)

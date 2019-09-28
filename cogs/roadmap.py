@@ -24,15 +24,15 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
             await ctx.send(cog_help(ctx))
 
     @roadmap.command(brief='Gets patch info')
-    async def patch(self, ctx, patch: str):
+    async def patch(self, ctx, patch_number: str):
         """
             Gets details of a patch and it's feature. !roadmap feature can be used for each feature
 
-            patch - Patch number.
+            patch_number - Patch number.
         """
         roadmap_helper.download_patch_data_s3()
         data = yaml_helper.read_yaml(f'patch-data/patches-parsed-{last_update_date()}')
-        patch_data = next((item for item in data if item['patch'] == patch), None)
+        patch_data = next((item for item in data if item['patch'] == patch_number), None)
 
         embed = discord.Embed()
         for feature in patch_data['features']:
@@ -50,21 +50,21 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
         await ctx.send(f"Patch: {patch_data['patch']}, Release Quarter: {patch_data['release_quarter']}", embed=embed)
 
     @roadmap.command(brief='Gets patch updates')
-    async def updates(self, ctx, patch: str):
+    async def updates(self, ctx, patch_number: str):
         """
         Get updates to patch since last roadmap update
 
-        patch - patch number
+        patch_number - patch number
         """
         roadmap_helper.download_patch_data_s3()
-        data = roadmap_helper.get_latest_patch_updates(patch)
+        data = roadmap_helper.get_latest_patch_updates(patch_number)
         if 'error' in data:
             await ctx.send(data['error'])
             return
 
         update_date = datetime.fromtimestamp(data['date']).strftime('%B %d, %Y')
         new_patch_data = next((item for item in yaml_helper.read_yaml(f'patch-data/patches-parsed-{last_update_date()}')
-                               if item['patch'] == patch))
+                               if item['patch'] == patch_number))
 
         embed = discord.Embed()
 
@@ -101,10 +101,10 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
 
             embed.add_field(name=key.capitalize(), value=update, inline=False)
 
-        await ctx.send(f'{patch} Updates - {update_date}', embed=embed)
+        await ctx.send(f'{patch_number} Updates - {update_date}', embed=embed)
 
     @roadmap.command(brief='Gets a roadmap feature')
-    async def feature(self, ctx, feature: ConvertToId()):
+    async def feature(self, ctx, feature_name: ConvertToId()):
         """
             Gets a feature. Surround with quotes for spaces
 
@@ -117,7 +117,7 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
 
         for patch in data:
             for section in patch['features']:
-                if section['id'] == feature:
+                if section['id'] == feature_name:
                     feature_dict = section
                     patch_name = patch['patch']
                     break
