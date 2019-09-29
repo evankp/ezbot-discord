@@ -1,6 +1,7 @@
 .idea/*
 venv/*
 tokens.yaml
+webhooks.yaml
 packages/*
 __pycache__/
 *.pyc

@@ -33,19 +33,6 @@ async def on_command_error(ctx, error):
         await ctx.send(f'Missing the required "{str(error).split(" ")[0]}" parameter')
     else:
         await ctx.send('An unknown/code error happened!')
-        print(error)
-    # ignore_global_action = ['event set']
-    # command_name = ''
-    #
-    # if hasattr(ctx.command, 'parent'):
-    #     command_name = ctx.command.parent.name
-    #
-    # command_name += f' {ctx.command.name}'
-    #
-    # print(command_name)
-    #
-    # if command_name not in ignore_global_action:
-    #     await ctx.send(error)
 
 
 @client.command(hidden=True)

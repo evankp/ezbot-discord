@@ -57,49 +57,14 @@ class RoadmapCog(commands.Cog, name='Roadmap Command', command_attrs=dict(pass_c
         patch_number - patch number
         """
         roadmap_helper.download_patch_data_s3()
-        data = roadmap_helper.get_latest_patch_updates(patch_number)
-        if 'error' in data:
-            await ctx.send(data['error'])
-            return
 
-        update_date = datetime.fromtimestamp(data['date']).strftime('%B %d, %Y')
-        new_patch_data = next((item for item in yaml_helper.read_yaml(f'patch-data/patches-parsed-{last_update_date()}')
-                               if item['patch'] == patch_number))
+        update_data = roadmap_helper.get_latest_patch_updates(patch_number)
+        update_date = datetime.fromtimestamp(update_data['date']).strftime('%B %d, %Y')
 
-        embed = discord.Embed()
-
-        for key, value in data['updates'].items():
-            update = 'None'
-            if value:
-                update = ''
-                if key == 'added':
-                    for feature in value:
-                        feature_data = next((item for item in new_patch_data['features'] if item['id'] == feature))
-
-                        update += f"{feature_data['name']} \n ```{feature_data['description']}``` \n \n"
-
-                elif key == 'removed':
-                    # TODO: Need to update update method to account for features being removed/moved better
-                    # Placeholder
-                    update = value
-
-                elif key == 'updated':
-                    for feature_update in value:
-                        feature_data = next((item for item in new_patch_data['features']
-                                              if item['id'] == feature_update['feature']))
-
-                        update += f"__{feature_data['name']}__\n\n"
-
-                        for attribute_update in feature_update['attribute_updates']:
-                            update += f"{attribute_update['attribute'].capitalize()}\n"
-                            if not attribute_update['old']:
-                                update += f"``` None -> {attribute_update['new']}```\n"
-                            else:
-                                update += f"``` {attribute_update['old']} -> {attribute_update['new']}```\n"
-                else:
-                    update = value
-
-            embed.add_field(name=key.capitalize(), value=update, inline=False)
+        embed = roadmap_helper.format_update_embed(
+            patch=patch_number,
+            patch_data=yaml_helper.read_yaml(f'patch-data/patches-parsed-{last_update_date()}')
+        )
 
         await ctx.send(f'{patch_number} Updates - {update_date}', embed=embed)
 

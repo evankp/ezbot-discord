@@ -1,6 +1,7 @@
 import requests
+import discord
+import boto3, botocore.exceptions
 import yaml
-import boto3
 import os.path as file_path
 from datetime import datetime, timedelta
 
@@ -166,17 +167,20 @@ def compare_patch_differences(old_data=None, new_data=None, output: str = 'dict'
     return {'date': datetime.now().timestamp(), 'updates': total_changes}
 
 
-def get_latest_patch_updates(patch=None):
+def get_latest_patch_updates(patch):
     try:
         update = yaml_functions.read_yaml(f'patch-data/roadmap-update-{last_update_date()}')
     except FileNotFoundError:
-        return {'error': 'Not enough data collected for updates yet!'}
+        try:
+            update = yaml.safe_load(s3.Object(bucket, f'patch-data/roadmap-update-{last_update_date()}.yaml').get()['Body'])
+        except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == '404':
+                return {'error': 'Not enough data collected for updates yet!'}
 
-    if patch:
-        return {'date': update['date'],
-                'updates': next((update['changes'] for update in update['updates'] if update['patch'] == patch), None)}
+            return {'error': error.response['Error']['Message']}
 
-    return update
+    return {'date': update['date'],
+            'updates': next((update['changes'] for update in update['updates'] if update['patch'] == patch), None)}
 
 
 def download_patch_data_s3():
@@ -191,6 +195,52 @@ def download_patch_data_s3():
 
     if not file_path.isfile(update_path):
         update_object.download_file(update_path)
+
+
+def format_update_embed(patch, patch_data):
+    update_data = get_latest_patch_updates(patch)
+
+    if 'error' in update_data:
+        return update_data['error']
+
+    patch_data = next((item for item in patch_data if item['patch'] == patch))
+
+    embed = discord.Embed()
+
+    for key, value in update_data['updates'].items():
+        update = 'None'
+        if value:
+            update = ''
+            if key == 'added':
+                for feature in value:
+                    feature_data = next((item for item in patch_data['features'] if item['id'] == feature))
+
+                    update += f"{feature_data['name']} \n ```{feature_data['description']}``` \n \n"
+
+            elif key == 'removed':
+                # TODO: Need to update update method to account for features being removed/moved better
+                # Placeholder
+                update = value
+
+            elif key == 'updated':
+                for feature_update in value:
+                    feature_data = next((item for item in patch_data['features']
+                                         if item['id'] == feature_update['feature']))
+
+                    update += f"__{feature_data['name']}__\n\n"
+
+                    for attribute_update in feature_update['attribute_updates']:
+                        update += f"{attribute_update['attribute'].capitalize()}\n"
+                        if not attribute_update['old']:
+                            update += f"``` None -> {attribute_update['new']}```\n"
+                        else:
+                            update += f"``` {attribute_update['old']} -> {attribute_update['new']}```\n"
+            else:
+                update = value
+
+        embed.add_field(name=key.capitalize(), value=update, inline=False)
+
+    return embed
 
 
 if __name__ == '__main__':
