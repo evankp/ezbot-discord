@@ -63,8 +63,12 @@ def parse_patch_progress(patch, categories):
 def get_releases_parsed(output: str = 'list'):
     patches = []
     data = get_releases_raw()
+
     for patch in data['patches']:
         if patch['released'] or not patch['cards']:
+            continue
+
+        if 'Released' in patch['description']:
             continue
 
         patch_data = parse_patch_progress(patch, data['categories'])
