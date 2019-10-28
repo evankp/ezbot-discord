@@ -4,6 +4,7 @@ import pytz
 from datetime import datetime
 
 from helpers.yaml_helper import read_yaml
+#TODO: UPDATE DB Information, method was changed
 from helpers.database import get_event
 from helpers.time import to_timezone
 
