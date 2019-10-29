@@ -6,7 +6,6 @@ TOKEN = read_yaml('tokens')['bot_token']
 client = commands.Bot(command_prefix="!")
 
 COGS = [
-    # 'cogs.events',
     'cogs.roadmap',
     'cogs.ships'
 ]

@@ -4,7 +4,7 @@ import discord
 from discord import Webhook, RequestsWebhookAdapter
 
 import helpers.yaml_helper as yaml_helper
-from helpers.sc_roadmap import format_update_embed, get_latest_patch_updates
+from helpers.sc_roadmap import format_update_embed
 from helpers.time import last_update_date
 
 
