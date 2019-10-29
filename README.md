@@ -13,7 +13,7 @@ slight modification.
 1. Clone repository
 2. Create tokens.yaml in root directory with following information:
 ```yaml
-bot_token: "Client Secret - Create an application on https://discordapp.com/developers/applications/"
+bot_token: "Bot Token - Create an application on https://discordapp.com/developers/applications/"
 ```
 
 3. Create webhooks.yaml in root directory with following information if using webhooks:
